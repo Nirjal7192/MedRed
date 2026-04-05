@@ -33,6 +33,7 @@ body {
   background: var(--bg);
   color: var(--fg);
   overflow-x: hidden;
+  overflow-y: auto;
   min-height: 100vh;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -310,22 +311,28 @@ textarea {
 @media (min-width: 768px) {
   .menu-toggle {
     display: none;
+    color: rgba(255, 255, 255, 0.8);
   }
 }
 .mobile-menu {
   display: none;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: #111;
+  padding: 1rem;
+  position: absolute;
+  top: 70px;
+  left: 0;
+  width: 100%;
+  z-index: 2000;
 }
+
 .mobile-menu.open {
   display: flex;
 }
+
 .mobile-menu a {
-  padding: 0.9rem 1rem;
-  border-radius: 0.75rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: white;
+  padding: 10px;
 }
 .mobile-menu a:hover {
   background: rgba(255, 255, 255, 0.1);
@@ -431,6 +438,7 @@ textarea {
 .hero-content {
   text-align: center;
   padding: 2rem 0;
+  overflow: visible;
   position: relative;
   z-index: 1;
 }

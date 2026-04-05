@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Bell, User, Pill } from "lucide-react";
+import { Bell, Pill, Menu, X } from "lucide-react";
 
 export default function Navbar({ user }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -27,7 +27,7 @@ export default function Navbar({ user }) {
       <div className="nav-inner">
         <Link to="/" className="logo">
           <div className="logo-icon">
-            <Pill size={20} color="#ef4444" />
+            <Pill size={20} color="#ff0000" />
           </div>
           <span className="gradient-text">MedRed</span>
         </Link>
@@ -57,8 +57,8 @@ export default function Navbar({ user }) {
               </button>
             </div>
           </div>
-          <button className="menu-toggle" onClick={() => setMenuOpen(o => !o)}>
-            <i className={`fas fa-${menuOpen ? 'times' : 'bars'}`} />
+          <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
+            {menuOpen ? <X size={25} /> : <Menu size={25} />}
           </button>
         </div>
       </div>

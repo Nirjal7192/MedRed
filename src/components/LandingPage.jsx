@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import useCanvasAnimation from "../hooks/useCanvasAnimation";
-import { Bell, AlarmClockCheck, Heart, Pill, Calendar, Shield, Menu, Zap, BarChart3, RefreshCw } from "lucide-react";
+import { Bell, AlarmClockCheck, Heart, Pill, Calendar, Shield, Menu, X, Zap, BarChart3, RefreshCw } from "lucide-react";
 
 export default function LandingPage() {
   const canvasRef = useRef(null);
@@ -34,8 +34,8 @@ export default function LandingPage() {
             <Link to="/login" className="btn btn-ghost">Sign In</Link>
             <Link to="/login" className="btn btn-primary">Get Started</Link>
           </div>
-          <button className="menu-toggle" onClick={() => setMenuOpen(o => !o)}>
-            <i className={`fas fa-${menuOpen ? 'times' : <Menu />}`} />
+          <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
         <div className={`mobile-menu ${menuOpen ? 'open' : ''}`}>
