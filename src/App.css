@@ -32,7 +32,6 @@ body {
     sans-serif;
   background: var(--bg);
   color: var(--fg);
-  overflow-x: hidden;
   overflow-y: auto;
   min-height: 100vh;
   line-height: 1.6;
