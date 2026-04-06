@@ -10,7 +10,7 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   return (
-    <div style={{ position: 'relative', background: 'var(--bg)' }}>
+    <div style={{ position: 'relative' }}>
       <canvas ref={canvasRef} className="canvas-bg" />
       <div className="blob blob-1" />
       <div className="blob blob-2" />

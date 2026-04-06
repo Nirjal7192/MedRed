@@ -75,7 +75,7 @@ export default function DashboardPage() {
   const initials = ((userData.fname?.[0] || '') + (userData.lname?.[0] || '')).toUpperCase();
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+    <div style={{ minHeight: '100vh' }}>
       <Navbar user={userData} />
       <div className="blob blob-1" /><div className="blob blob-2" />
 

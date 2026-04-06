@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import GlobalStyles from "./components/GlobalStyles";
+import AnimatedBackground from "./components/AnimatedBackground";
 import LandingPage from "./components/LandingPage";
 import Dashboard from "./components/Dashboard";
 import Reminders from "./components/Reminders";
@@ -12,6 +13,7 @@ export default function App() {
   return (
     <Router>
       <GlobalStyles />
+      <AnimatedBackground />
 
       <Routes>
         <Route path="/" element={<LandingPage />} />

@@ -23,6 +23,7 @@
 }
 html {
   scroll-behavior: smooth;
+  background: var(--bg);
 }
 body {
   font-family:
@@ -30,7 +31,7 @@ body {
     system-ui,
     -apple-system,
     sans-serif;
-  background: var(--bg);
+  background: transparent;
   color: var(--fg);
   overflow-y: auto;
   min-height: 100vh;
@@ -952,7 +953,6 @@ textarea {
 .login-page {
   min-height: 100vh;
   position: relative;
-  background: var(--bg);
 }
 .login-content {
   min-height: 100vh;
@@ -1958,7 +1958,6 @@ textarea {
 
 /* ── USER FORM PAGE ── */
 .uf-page {
-  background: var(--bg);
   min-height: 100vh;
 }
 .uf-main {
@@ -2156,7 +2155,6 @@ textarea {
   align-items: center;
   text-align: center;
   position: relative;
-  background: var(--bg);
 }
 .error-card {
   position: relative;
