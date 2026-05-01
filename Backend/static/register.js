@@ -1,0 +1,346 @@
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("registerForm");
+  const password = document.getElementById("password");
+  const confirmPassword = document.getElementById("confirmPassword");
+  const togglePassword = document.getElementById("togglePassword");
+  const toggleConfirm = document.getElementById("toggleConfirmPassword");
+  const firstNameInput = document.getElementById("firstName");
+  const lastNameInput = document.getElementById("lastName");
+  const emailInput = document.getElementById("email");
+  const toast = document.getElementById("toast");
+  const passwordStrength = password.parentElement.nextElementSibling;
+  const passwordStrengthBar = passwordStrength.querySelector(
+    ".password-strength-bar"
+  );
+  const passwordHint = passwordStrength.nextElementSibling;
+
+  // Enhanced validation functions
+  function isValidName(name) {
+    const nameRegex = /^[a-zA-Z\s'-]{2,50}$/;
+    return nameRegex.test(name.trim());
+  }
+
+  function isValidEmail(email) {
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+  }
+
+  function isStrongPassword(pwd) {
+    // Must contain at least 8 chars, uppercase, lowercase, number, special char
+    const hasLength = pwd.length >= 8;
+    const hasUpper = /[A-Z]/.test(pwd);
+    const hasLower = /[a-z]/.test(pwd);
+    const hasNumber = /\d/.test(pwd);
+    const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd);
+
+    return hasLength && hasUpper && hasLower && hasNumber && hasSpecial;
+  }
+
+  function showToast(message, type = "success") {
+    toast.className = `toast ${type}`;
+    toast.querySelector(".toast-message").textContent = message;
+    toast.querySelector(".toast-icon").textContent =
+      type === "success" ? "✓" : "✕";
+    toast.classList.add("show");
+
+    setTimeout(() => {
+      toast.classList.remove("show");
+    }, 4000);
+  }
+
+  function checkPasswordStrength(pwd) {
+    let strength = 0;
+    if (pwd.length >= 8) strength++;
+    if (pwd.match(/[a-z]/) && pwd.match(/[A-Z]/)) strength++;
+    if (pwd.match(/\d/)) strength++;
+    if (pwd.match(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/)) strength++;
+
+    return strength;
+  }
+
+  // Real-time password strength indicator
+  password.addEventListener("input", () => {
+    const strength = checkPasswordStrength(password.value);
+
+    if (password.value.length > 0) {
+      passwordStrength.classList.add("show");
+      passwordHint.classList.add("show");
+
+      passwordStrengthBar.className = "password-strength-bar";
+      if (strength <= 1) {
+        passwordStrengthBar.classList.add("weak");
+      } else if (strength <= 2) {
+        passwordStrengthBar.classList.add("medium");
+      } else {
+        passwordStrengthBar.classList.add("strong");
+      }
+    } else {
+      passwordStrength.classList.remove("show");
+      passwordHint.classList.remove("show");
+    }
+  });
+
+  // Password toggles
+  togglePassword.addEventListener("click", () => {
+    if (password.type === "password") {
+      password.type = "text";
+      togglePassword.innerHTML =
+        '<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+      togglePassword.setAttribute("title", "Hide Password");
+    } else {
+      password.type = "password";
+      togglePassword.innerHTML =
+        '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+      togglePassword.setAttribute("title", "Show Password");
+    }
+  });
+
+  toggleConfirm.addEventListener("click", () => {
+    if (confirmPassword.type === "password") {
+      confirmPassword.type = "text";
+      toggleConfirm.innerHTML =
+        '<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+      toggleConfirm.setAttribute("title", "Hide Password");
+    } else {
+      confirmPassword.type = "password";
+      toggleConfirm.innerHTML =
+        '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+      toggleConfirm.setAttribute("title", "Show Password");
+    }
+  });
+
+  function validateField(field, condition, errorMsg) {
+    const formGroup = field.closest(".form-group");
+    const errorElement = formGroup.querySelector(".error-message");
+
+    if (!condition) {
+      formGroup.classList.add("error");
+      if (errorElement) {
+        errorElement.textContent = errorMsg;
+      }
+      return false;
+    } else {
+      formGroup.classList.remove("error");
+      return true;
+    }
+  }
+
+  // Clear errors on input
+  [
+    firstNameInput,
+    lastNameInput,
+    emailInput,
+    password,
+    confirmPassword,
+  ].forEach((field) => {
+    field.addEventListener("input", () => {
+      field.closest(".form-group").classList.remove("error");
+    });
+  });
+
+  // Real-time validation on blur
+  firstNameInput.addEventListener("blur", () => {
+    if (firstNameInput.value.trim()) {
+      if (!isValidName(firstNameInput.value)) {
+        validateField(
+          firstNameInput,
+          false,
+          "First name must be 2-50 characters, letters only"
+        );
+      }
+    }
+  });
+
+  lastNameInput.addEventListener("blur", () => {
+    if (lastNameInput.value.trim()) {
+      if (!isValidName(lastNameInput.value)) {
+        validateField(
+          lastNameInput,
+          false,
+          "Last name must be 2-50 characters, letters only"
+        );
+      }
+    }
+  });
+
+  emailInput.addEventListener("blur", () => {
+    if (emailInput.value.trim()) {
+      if (!isValidEmail(emailInput.value)) {
+        validateField(
+          emailInput,
+          false,
+          "Please enter a valid email (e.g., user@example.com)"
+        );
+      }
+    }
+  });
+
+  password.addEventListener("blur", () => {
+    if (password.value) {
+      if (!isStrongPassword(password.value)) {
+        validateField(
+          password,
+          false,
+          "Password must be 8+ chars with uppercase, lowercase, number & special character"
+        );
+      }
+    }
+  });
+
+  confirmPassword.addEventListener("blur", () => {
+    if (confirmPassword.value && password.value) {
+      validateField(
+        confirmPassword,
+        password.value === confirmPassword.value,
+        "Passwords do not match"
+      );
+    }
+  });
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    let isValid = true;
+
+    // Validate first name
+    const firstNameValue = firstNameInput.value.trim();
+    if (!firstNameValue) {
+      isValid =
+        validateField(firstNameInput, false, "First name is required") &&
+        isValid;
+    } else if (!isValidName(firstNameValue)) {
+      isValid =
+        validateField(
+          firstNameInput,
+          false,
+          "First name must be 2-50 characters, letters only"
+        ) && isValid;
+    }
+
+    // Validate last name
+    const lastNameValue = lastNameInput.value.trim();
+    if (!lastNameValue) {
+      isValid =
+        validateField(lastNameInput, false, "Last name is required") && isValid;
+    } else if (!isValidName(lastNameValue)) {
+      isValid =
+        validateField(
+          lastNameInput,
+          false,
+          "Last name must be 2-50 characters, letters only"
+        ) && isValid;
+    }
+
+    // Validate email
+    const emailValue = emailInput.value.trim();
+    if (!emailValue) {
+      isValid =
+        validateField(emailInput, false, "Email address is required") &&
+        isValid;
+    } else if (!isValidEmail(emailValue)) {
+      isValid =
+        validateField(
+          emailInput,
+          false,
+          "Please enter a valid email address (e.g., user@example.com)"
+        ) && isValid;
+    } else if (emailValue.length > 255) {
+      isValid =
+        validateField(
+          emailInput,
+          false,
+          "Email address is too long (maximum 255 characters)"
+        ) && isValid;
+    }
+
+    // Validate password
+    if (!password.value) {
+      isValid =
+        validateField(password, false, "Password is required") && isValid;
+    } else if (!isStrongPassword(password.value)) {
+      isValid =
+        validateField(
+          password,
+          false,
+          "Password must be 8+ chars with uppercase, lowercase, number & special character"
+        ) && isValid;
+    } else if (password.value.length > 128) {
+      isValid =
+        validateField(
+          password,
+          false,
+          "Password is too long (maximum 128 characters)"
+        ) && isValid;
+    }
+
+    // Validate password confirmation
+    if (!confirmPassword.value) {
+      isValid =
+        validateField(confirmPassword, false, "Please confirm your password") &&
+        isValid;
+    } else if (password.value !== confirmPassword.value) {
+      isValid =
+        validateField(confirmPassword, false, "Passwords do not match") &&
+        isValid;
+    }
+
+    if (!isValid) {
+      showToast("Please fix the errors before submitting", "error");
+      return;
+    }
+
+    const submitBtn = form.querySelector(".login-btn");
+    const btnText = submitBtn.querySelector(".btn-text");
+    const originalText = btnText.textContent;
+    submitBtn.disabled = true;
+    btnText.textContent = "Creating Account...";
+
+    // Demo mode - show success message
+    setTimeout(() => {
+      showToast("Account created successfully! Redirecting...", "success");
+      setTimeout(() => {
+        // In a real app, this would redirect to login.html
+        submitBtn.disabled = false;
+        btnText.textContent = originalText;
+        form.reset();
+        passwordStrength.classList.remove("show");
+        passwordHint.classList.remove("show");
+      }, 1500);
+    }, 1000);
+
+    /* Uncomment this for actual API integration: */
+    const formData = new URLSearchParams();
+    formData.append("email", emailValue);
+    formData.append("password", password.value);
+    formData.append("username", `${firstNameValue} ${lastNameValue}`);
+    formData.append("firstName", firstNameValue);
+    formData.append("lastName", lastNameValue);
+
+    fetch("/api/register", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: formData.toString(),
+    })
+      .then((response) => {
+        if (response.ok) {
+          showToast("Account created successfully! Redirecting...", "success");
+          setTimeout(() => {
+            window.location.href = response.url || "/login.html";
+          }, 1500);
+        } else {
+          return response.json().then((errorData) => {
+            throw new Error(errorData.detail || "Failed to create account");
+          });
+        }
+      })
+      .catch((err) => {
+        console.error("Registration failed", err);
+        showToast(err.message || "Error connecting to the server", "error");
+        submitBtn.disabled = false;
+        btnText.textContent = originalText;
+      });
+  });
+});

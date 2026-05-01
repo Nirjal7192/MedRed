@@ -1,24 +1,59 @@
+Backend/venv/
+Backend/.venv/
+Backend/.env
+venv/
+.venv/
+# Python cach
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+# Environment variables
+.env
+.env.*
+!.env.example
+# Distribution / build
+dist/
+build
+*.egg-info/
+*.egg
+# Pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+# MyPy
+.mypy_cache/
 # Logs
-logs
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# ========================
+# React / Vite Frontend
+# ========================
+# Dependencies
+Frontend/node_modules/
+node_modules/
+# Build output
+Frontend/dist/
+Frontend/build/
+# Vite cache
+Frontend/.vite/
+.vite/
+# ========================
+# Editor & OS
+# ========================
+# VS Code
+.vscode/
+# JetBrains IDEs
+.idea/
+# macOS
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Windows
+Thumbs.db
+desktop.ini
+# ========================
+# Misc
+# ========================
+# Uploaded / generated files
+uploads/
+*.sqlite
+*.db
