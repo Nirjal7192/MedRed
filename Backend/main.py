@@ -1,13 +1,12 @@
-from fastapi import FastAPI,Request
+from fastapi import FastAPI, Request, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from routers import render, auth, reminders
-from fastapi.staticfiles import StaticFiles
+from routers import auth, reminders
 from contextlib import asynccontextmanager
 from scheduler import start_scheduler, shutdown_scheduler, load_existing_reminders
 from fastapi.responses import JSONResponse
-from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
-
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.openapi.utils import get_openapi
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
@@ -24,7 +23,7 @@ async def lifespan(app: FastAPI):
     shutdown_scheduler()
     print("👋 Application shutdown complete")
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
 # CORS Configuration
 origins = [
@@ -43,11 +42,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Include routers
-app.include_router(render.router)  
-app.include_router(prefix="/api", router=auth.router)
+app.include_router(prefix="/api/auth", router=auth.router)
 app.include_router(prefix="/api/reminders", router=reminders.router)
 
 # Health check endpoint
@@ -59,34 +54,17 @@ async def health_check():
     }
 
 
-templates = Jinja2Templates(directory="templates")
-
-def wants_html(request: Request):
-    return "text/html" in request.headers.get("accept", "")
-
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-    if wants_html(request):
-        return templates.TemplateResponse("error.html", {"request": request}, status_code=exc.status_code)
-    return JSONResponse({"error": "Something went wrong 😞"}, status_code=exc.status_code)
+    return JSONResponse({"error": exc.detail}, status_code=exc.status_code)
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
-    if wants_html(request):
-        return templates.TemplateResponse("error.html", {"request": request}, status_code=500)
-    return JSONResponse({"error": "Something went wrong 😞"}, status_code=500)
-
-from fastapi import FastAPI, Depends, HTTPException, status
+    return JSONResponse({"error": "Something went wrong 😞", "details": str(exc)}, status_code=500)
 
 def verify_admin_key(admin_key: str):
     if admin_key != "secret123":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-
-app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
-
-# Re-enable docs at a secret path
-from fastapi.openapi.docs import get_swagger_ui_html
-from fastapi.openapi.utils import get_openapi
 
 @app.get("/secret-docs", dependencies=[Depends(lambda: verify_admin_key("secret123"))])
 async def get_documentation():

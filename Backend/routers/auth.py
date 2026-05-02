@@ -1,23 +1,47 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status, Response, Cookie, Form, Body
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Response, Cookie, Body
+from fastapi.responses import JSONResponse
 from controller.auth import verifyPassword, createAccessToken, getCurrentUserFromCookie
 from models import database as db
 from controller import auth
 from typing import Optional
+from pydantic import BaseModel
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class RegisterRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+
+class UpdateUserRequest(BaseModel):
+    mobileNumber: str
+    emergencyContactNumber: str
+    birthDate: str
+    city: str
+    gender: str
+    streetAddress: str
+    state: str
+    pinCode: str
+    country: str
+    bloodGroup: str
+    medicalConditions: Optional[str] = ""
+    allergies: Optional[str] = ""
 
 router = APIRouter(tags=["auth"])
 
 @router.post("/login")
-async def login(email: str = Form(...), password: str = Form(...)):
-    user = db.getUser(email)
+async def login(req: LoginRequest):
+    user = db.getUser(req.email)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="user not found")
-    if not verifyPassword(password, user["password"]):
+    if not verifyPassword(req.password, user["password"]):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="incorrect password")
     del user["password"]  # Remove password before creating token
     token = createAccessToken(data={"sub": user["userId"], "user": user}, expires_delta=None)
 
-    response = RedirectResponse(url="/", status_code=302)
+    response = JSONResponse(content={"success": True, "message": "Login successful", "user": user})
     response.set_cookie(
         key="token",
         value=token,
@@ -27,19 +51,20 @@ async def login(email: str = Form(...), password: str = Form(...)):
     )
     return response
 
-
 @router.post("/register/")
-def register(username: str = Form(...), email: str = Form(...), password: str = Form(...)):
-    existing_user = db.getUser(email)
+def register(req: RegisterRequest):
+    existing_user = db.getUser(req.email)
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
     try:
-        fname, lname = username.split(" ")
-        hashed_password = auth.getPasswordHash(password)
-        mess = db.createUser(fname, lname, email, hashed_password)
+        parts = req.username.split(" ", 1)
+        fname = parts[0]
+        lname = parts[1] if len(parts) > 1 else ""
+        hashed_password = auth.getPasswordHash(req.password)
+        mess = db.createUser(fname, lname, req.email, hashed_password)
         print(mess)
-        token = createAccessToken(data={"sub": mess["userId"], "user": {"email": email, "fname": fname, "lname": lname}}, expires_delta=None)
-        response = RedirectResponse(url="/info", status_code=302)
+        token = createAccessToken(data={"sub": mess["userId"], "user": {"email": req.email, "fname": fname, "lname": lname}}, expires_delta=None)
+        response = JSONResponse(content={"success": True, "message": "Registration successful"})
         response.set_cookie(
             key="token",
             value=token,
@@ -49,24 +74,12 @@ def register(username: str = Form(...), email: str = Form(...), password: str = 
         )
         return response
     except Exception as e:
-        return {"error": str(e)}
-
+        return JSONResponse(status_code=500, content={"error": str(e)})  
     
 @router.put("/updateUser/")
 async def updateUser(
     request: Request,
-    mobileNumber: str = Form(...),
-    emergencyContactNumber: str = Form(...),
-    birthDate: str = Form(...),
-    city: str = Form(...),
-    gender: str = Form(...),
-    streetAddress: str = Form(...),
-    state: str = Form(...),
-    pinCode: str = Form(...),  # Changed to str for easier handling
-    country: str = Form(...),
-    bloodGroup: str = Form(...),
-    medicalConditions: Optional[str] = Form(""),  # Optional with default
-    allergies: Optional[str] = Form("")  # Optional with default
+    req: UpdateUserRequest
 ):
     # Validate token first
     data = getCurrentUserFromCookie(request.cookies.get("token"))
@@ -94,13 +107,13 @@ async def updateUser(
         )
 
     # Validate mobile numbers
-    if not mobileNumber or len(mobileNumber) != 10 or not mobileNumber.isdigit():
+    if not req.mobileNumber or len(req.mobileNumber) != 10 or not req.mobileNumber.isdigit():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Mobile number must be exactly 10 digits"
         )
     
-    if emergencyContactNumber and (len(emergencyContactNumber) != 10 or not emergencyContactNumber.isdigit()):
+    if req.emergencyContactNumber and (len(req.emergencyContactNumber) != 10 or not req.emergencyContactNumber.isdigit()):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Emergency contact number must be exactly 10 digits"
@@ -108,7 +121,7 @@ async def updateUser(
 
     # Convert pinCode to int and validate
     try:
-        pin_code_int = int(pinCode)
+        pin_code_int = int(req.pinCode)
         if pin_code_int < 100000 or pin_code_int > 999999:
             raise ValueError("PIN code must be 6 digits")
     except ValueError as e:
@@ -120,18 +133,18 @@ async def updateUser(
     try:
         result = db.updateUser(
             userId=sub,
-            mobileNumber=mobileNumber,
-            gender=gender,
-            bloodGroup=bloodGroup,
-            emergencyContactNumber=emergencyContactNumber,
-            allergies=allergies,
-            medicalConditions=medicalConditions,
-            birthDate=birthDate,
-            streetAddress=streetAddress,
-            city=city,
-            state=state,
+            mobileNumber=req.mobileNumber,
+            gender=req.gender,
+            bloodGroup=req.bloodGroup,
+            emergencyContactNumber=req.emergencyContactNumber,
+            allergies=req.allergies,
+            medicalConditions=req.medicalConditions,
+            birthDate=req.birthDate,
+            streetAddress=req.streetAddress,
+            city=req.city,
+            state=req.state,
             pinCode=pin_code_int,  # Pass as int
-            country=country
+            country=req.country
         )
         
         print(f"Update result: {result}")
@@ -223,7 +236,7 @@ async def get_me(token: str = Cookie(None)):
 
 @router.get("/logout")
 async def logout():
-    response = RedirectResponse(url="/", status_code=302)
+    response = JSONResponse(content={"success": True, "message": "Logged out successfully"})
     response.delete_cookie(key="token")
     return response
 
