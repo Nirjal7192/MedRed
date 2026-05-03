@@ -46,7 +46,7 @@ export default function LoginPage() {
 
     setLoginLoading(true);
     // API call would go here; for demo we navigate after a short delay
-    fetch('/api/login', {
+    fetch('${process.env.REACT_APP_API_BASE_URL}/message/api/login', {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ email: loginData.email, password: loginData.password }).toString(),
