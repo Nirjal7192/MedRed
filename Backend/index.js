@@ -1,25 +1,20 @@
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./utils/swagger');
+
+// Import services and routers
 const { startScheduler, shutdownScheduler, loadExistingReminders } = require('./services/scheduler');
 const authRouter = require('./routes/authRoutes');
 const remindersRouter = require('./routes/reminderRoutes');
-const cookieParser = require('cookie-parser');
-const app = express();
-app.use(cookieParser());
-app.use(express.json());
-// --- 1. Lifespan / Startup Logic ---
-const initializeApp = async () => {
-    console.log("🚀 Starting MedRed application...");
-    
-    // Equivalent to start_scheduler()
-    startScheduler();
-    
-    // Equivalent to load_existing_reminders()
-    const reminderCount = await loadExistingReminders();
-    console.log(`✅ Application started with ${reminderCount} reminders scheduled`);
-};
+const verifyAdminKey = require('./middleware/adminAuth'); // Import from middleware[cite: 1]
 
-// --- 2. CORS Configuration ---
+const app = express();
+// --- 1. Global Middleware ---
+app.use(express.json());
+app.use(cookieParser());
+
 const allowedOrigins = [
     "http://localhost:5500",
     "http://127.0.0.1:5500",
@@ -30,7 +25,6 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or curl)
         if (!origin) return callback(null, true);
         if (allowedOrigins.indexOf(origin) === -1) {
             const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
@@ -41,42 +35,36 @@ app.use(cors({
     credentials: true
 }));
 
-app.use(express.json());
+// --- 2. Documentation Routes (Secret) ---
+// swaggerUi.setup handles the rendering, so you don't need a separate app.get for this
+app.use('/secret-docs', verifyAdminKey, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// --- 3. Routes ---
+app.get('/openapi.json', verifyAdminKey, (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+});
+
+// --- 3. Application Routes ---
 app.use('/api/auth', authRouter);
 app.use('/api/reminders', remindersRouter);
+
 app.get('/', (req, res) => {
-    res.json({
-        message: "Welcome to the MedRed API! 🚀"
-    });
+    res.json({ message: "Welcome to the MedRed API! 🚀" });
 });
 
-// Health check endpoint
 app.get('/health', (req, res) => {
-    res.json({
-        status: "ok",
-        message: "MedRed API is running"
-    });
+    res.json({ status: "ok", message: "MedRed API is running" });
 });
 
-// --- 4. Secret Docs Logic (Admin Key) ---
-const verifyAdminKey = (req, res, next) => {
-    const adminKey = req.query.admin_key || req.headers['x-admin-key'];
-    if (adminKey !== "secret123") {
-        return res.status(401).json({ error: "Unauthorized" });
-    }
-    next();
+// --- 4. Lifespan / Startup Logic ---
+const initializeApp = async () => {
+    console.log("🚀 Starting MedRed application...");
+    startScheduler();
+    const reminderCount = await loadExistingReminders();
+    console.log(`✅ Application started with ${reminderCount} reminders scheduled`);
 };
 
-// In MERN, you'd usually serve Swagger via 'swagger-ui-express'
-app.get('/secret-docs', verifyAdminKey, (req, res) => {
-    res.send("<h1>Secret Docs</h1><p>Documentation UI would render here.</p>");
-});
-
-// --- 5. Exception Handlers (Middleware) ---
-
-// Generic Error Handler (Catch-all)
+// --- 5. Exception Handlers ---
 app.use((err, req, res, next) => {
     const statusCode = err.status || 500;
     console.error(err.stack);
@@ -88,13 +76,11 @@ app.use((err, req, res, next) => {
 
 // --- 6. Server Listen & Shutdown ---
 const PORT = process.env.PORT || 8000;
-
 const server = app.listen(PORT, async () => {
     await initializeApp();
     console.log(`Server is running on port ${PORT}`);
 });
 
-// Graceful Shutdown (Equivalent to FastAPI shutdown)
 process.on('SIGTERM', () => {
     console.log('👋 SIGTERM received. Shutting down...');
     shutdownScheduler();
