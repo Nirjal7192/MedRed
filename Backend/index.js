@@ -3,7 +3,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./utils/swagger');
-
+const morgan = require('morgan');
 // Import services and routers
 const { startScheduler, shutdownScheduler, loadExistingReminders } = require('./services/scheduler');
 const authRouter = require('./routes/authRoutes');
@@ -11,12 +11,13 @@ const remindersRouter = require('./routes/reminderRoutes');
 const verifyAdminKey = require('./middleware/adminAuth'); // Import from middleware[cite: 1]
 
 const app = express();
+app.use(morgan('dev'));
 // --- 1. Global Middleware ---
 app.use(express.json());
 app.use(cookieParser());
 
 const allowedOrigins = [
-    "http://localhost:5500",
+    "http://localhost:5173",
     "http://127.0.0.1:5500",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
