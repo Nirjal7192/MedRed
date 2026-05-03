@@ -24,14 +24,13 @@ export default function LoginPage() {
   const [strength, setStrength] = useState('');
 
   const validateEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
-  const validateName  = n => n.trim().length >= 2 && /^[a-zA-Z\s'-]+$/.test(n.trim());
+  const validateName = n => n.trim().length >= 2 && /^[a-zA-Z\s'-]+$/.test(n.trim());
 
   function getStrength(pw) {
     let s = 0;
     if (pw.length >= 6) s++;
     if (pw.length >= 10) s++;
     if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) s++;
-    if (/\d/.test(pw)) s++;
     if (/[^a-zA-Z\d]/.test(pw)) s++;
     return s <= 2 ? 'weak' : s <= 4 ? 'medium' : 'strong';
   }
@@ -59,10 +58,10 @@ export default function LoginPage() {
   async function handleSignup(e) {
     e.preventDefault();
     const errs = {};
-    if (!validateName(signupData.firstName))    errs.firstName = 'First name must be at least 2 characters';
-    if (!validateName(signupData.lastName))     errs.lastName  = 'Last name must be at least 2 characters';
-    if (!validateEmail(signupData.email))       errs.email     = 'Please enter a valid email address';
-    if (signupData.password.length < 6)         errs.password  = 'Password must be at least 6 characters';
+    if (!validateName(signupData.firstName)) errs.firstName = 'First name must be at least 2 characters';
+    if (!validateName(signupData.lastName)) errs.lastName = 'Last name must be at least 2 characters';
+    if (!validateEmail(signupData.email)) errs.email = 'Please enter a valid email address';
+    if (signupData.password.length < 6) errs.password = 'Password must be at least 6 characters';
     if (signupData.password !== signupData.confirm) errs.confirm = 'Passwords do not match';
     setSignupErrors(errs);
     if (Object.keys(errs).length) return;

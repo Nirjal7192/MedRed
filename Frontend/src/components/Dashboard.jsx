@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import DnaStrip from "../components/DnaStrip";
 import { AlarmClockCheck, CircleUser, MapPinHouse, Hospital, PhoneCall } from "lucide-react";
@@ -28,17 +29,17 @@ export default function DashboardPage() {
             ...data.user,
             // Flatten embedded address for easy field access
             streetAddress: data.user.address?.streetAddress || '',
-            city:          data.user.address?.city || '',
-            state:         data.user.address?.state || '',
-            pinCode:       data.user.address?.pinCode || '',
-            country:       data.user.address?.country || '',
+            city: data.user.address?.city || '',
+            state: data.user.address?.state || '',
+            pinCode: data.user.address?.pinCode || '',
+            country: data.user.address?.country || '',
           };
           setUserData(dbUser);
           setEditData(dbUser);
           updateUser(dbUser);
         }
       })
-      .catch(() => {}); // silently fallback to AuthContext data
+      .catch(() => { }); // silently fallback to AuthContext data
   }, []);
 
   // Fetch reminders on mount
@@ -67,17 +68,17 @@ export default function DashboardPage() {
     setSaveLoading(true);
     try {
       await authApi.updateUser({
-        mobileNumber:   editData.mobileNumber || editData.mobile || '',
-        pinCode:        editData.pinCode || editData.pincode || '',
-        streetAddress:  editData.streetAddress || editData.street || '',
-        city:           editData.city || '',
-        state:          editData.state || '',
-        country:        editData.country || '',
-        gender:         editData.gender || '',
-        birthDate:      editData.birthDate || '',
-        bloodGroup:     editData.bloodGroup || '',
+        mobileNumber: editData.mobileNumber || editData.mobile || '',
+        pinCode: editData.pinCode || editData.pincode || '',
+        streetAddress: editData.streetAddress || editData.street || '',
+        city: editData.city || '',
+        state: editData.state || '',
+        country: editData.country || '',
+        gender: editData.gender || '',
+        birthDate: editData.birthDate || '',
+        bloodGroup: editData.bloodGroup || '',
         medicalConditions: editData.conditions || editData.medicalConditions || '',
-        allergies:      editData.allergies || '',
+        allergies: editData.allergies || '',
       });
       const merged = { ...userData, ...editData };
       setUserData(merged);
@@ -109,9 +110,9 @@ export default function DashboardPage() {
         <div className="row-lbl">{label}</div>
         <div className="row-val">
           {editing
-            ? <input type={type} className="row-input" value={editData[field] || ''}
-                onChange={e => setEditData(d => ({ ...d, [field]: e.target.value }))} />
-            : <div className="row-display">{userData[field] || '—'}</div>}
+            ? <input type={type} className="row-input" value={editData?.[field] || ''}
+              onChange={e => setEditData(d => ({ ...d, [field]: e.target.value }))} />
+            : <div className="row-display">{userData?.[field] || '—'}</div>}
         </div>
       </div>
     );
@@ -164,11 +165,11 @@ export default function DashboardPage() {
                 <div className="card-ttl">Personal Information</div>
               </div>
               <div className="info-rows">
-                <InfoRow label="First Name"  field="fname" />
-                <InfoRow label="Last Name"   field="lname" />
-                <InfoRow label="Mobile"      field="mobileNumber" type="tel" />
-                <InfoRow label="Gender"      field="gender" />
-                <InfoRow label="Birth Date"  field="birthDate" type="date" />
+                <InfoRow label="First Name" field="fname" />
+                <InfoRow label="Last Name" field="lname" />
+                <InfoRow label="Mobile" field="mobileNumber" type="tel" />
+                <InfoRow label="Gender" field="gender" />
+                <InfoRow label="Birth Date" field="birthDate" type="date" />
                 <InfoRow label="Blood Group" field="bloodGroup" />
               </div>
             </div>
@@ -180,9 +181,9 @@ export default function DashboardPage() {
                 <div className="card-ttl">Address</div>
               </div>
               <div className="info-rows">
-                <InfoRow label="Street"  field="streetAddress" />
-                <InfoRow label="City"    field="city" />
-                <InfoRow label="State"   field="state" />
+                <InfoRow label="Street" field="streetAddress" />
+                <InfoRow label="City" field="city" />
+                <InfoRow label="State" field="state" />
                 <InfoRow label="Pincode" field="pinCode" />
                 <InfoRow label="Country" field="country" />
               </div>
@@ -195,8 +196,8 @@ export default function DashboardPage() {
                 <div className="card-ttl">Medical Details</div>
               </div>
               <div className="info-rows">
-                <InfoRow label="Allergies"         field="allergies" />
-                <InfoRow label="Conditions"        field="medicalConditions" />
+                <InfoRow label="Allergies" field="allergies" />
+                <InfoRow label="Conditions" field="medicalConditions" />
                 <InfoRow label="Emergency Contact" field="emergencyContactNumber" type="tel" />
               </div>
             </div>

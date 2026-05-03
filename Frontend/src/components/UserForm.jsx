@@ -28,31 +28,31 @@ export default function UserFormPage() {
     setSubmitError('');
     try {
       await authApi.updateUser({
-        mobileNumber:   form.phone,
-        pinCode:        form.pincode,
-        streetAddress:  form.street,
-        city:           form.city,
-        state:          form.state,
-        country:        form.country,
-        gender:         form.gender,
-        birthDate:      form.dob,
-        bloodGroup:     form.bloodGroup,
+        mobileNumber: form.phone,
+        pinCode: form.pincode,
+        streetAddress: form.street,
+        city: form.city,
+        state: form.state,
+        country: form.country,
+        gender: form.gender,
+        birthDate: form.dob,
+        bloodGroup: form.bloodGroup,
         medicalConditions: form.conditions,
-        allergies:      form.allergies,
+        allergies: form.allergies,
       });
       // Update auth context with form data so Dashboard shows it
       updateUser({
-        mobileNumber:     form.phone,
-        pinCode:          form.pincode,
-        streetAddress:    form.street,
-        city:             form.city,
-        state:            form.state,
-        country:          form.country,
-        gender:           form.gender,
-        birthDate:        form.dob,
-        bloodGroup:       form.bloodGroup,
+        mobileNumber: form.phone,
+        pinCode: form.pincode,
+        streetAddress: form.street,
+        city: form.city,
+        state: form.state,
+        country: form.country,
+        gender: form.gender,
+        birthDate: form.dob,
+        bloodGroup: form.bloodGroup,
         medicalConditions: form.conditions,
-        allergies:        form.allergies,
+        allergies: form.allergies,
       });
       setShowSuccess(true);
       setTimeout(() => { setShowSuccess(false); navigate('/dashboard'); }, 2000);
@@ -71,6 +71,16 @@ export default function UserFormPage() {
           <div className="uf-card">
             <div className="uf-title">Complete Your Profile</div>
             <div className="uf-subtitle">Help us personalize your MedRed experience by filling in your health information.</div>
+
+            {error && (
+              <div style={{
+                background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.4)',
+                color: '#f87171', borderRadius: '8px', padding: '10px 14px',
+                marginBottom: '1rem', fontSize: '0.9rem'
+              }}>
+                ⚠️ {error}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} noValidate>
               {/* Personal */}
@@ -94,13 +104,13 @@ export default function UserFormPage() {
                 <div className="uf-field"><label>Blood Group</label>
                   <select className="uf-input uf-select" value={form.bloodGroup} onChange={update('bloodGroup')}>
                     <option value="">Select blood group</option>
-                    {['A+','A-','B+','B-','AB+','AB-','O+','O-'].map(g => <option key={g} value={g}>{g}</option>)}
+                    {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(g => <option key={g} value={g}>{g}</option>)}
                   </select>
                 </div>
                 <div className="uf-field" style={{ gridColumn: '1/-1' }}>
                   <label>Gender</label>
                   <div className="uf-radio-group">
-                    {['male','female','other'].map(g => (
+                    {['male', 'female', 'other'].map(g => (
                       <label key={g} className="uf-radio">
                         <input type="radio" name="gender" value={g} checked={form.gender === g}
                           onChange={() => setForm(d => ({ ...d, gender: g }))} />
@@ -145,7 +155,7 @@ export default function UserFormPage() {
                 <div className="uf-field"><label>Relationship</label>
                   <select className="uf-input uf-select" value={form.relationship} onChange={update('relationship')}>
                     <option value="">Select relationship</option>
-                    {['Spouse','Parent','Sibling','Child','Friend','Other'].map(r => <option key={r} value={r.toLowerCase()}>{r}</option>)}
+                    {['Spouse', 'Parent', 'Sibling', 'Child', 'Friend', 'Other'].map(r => <option key={r} value={r.toLowerCase()}>{r}</option>)}
                   </select>
                 </div>
               </div>
@@ -174,8 +184,8 @@ export default function UserFormPage() {
               )}
               <div className="uf-btn-group">
                 <button type="button" className="uf-btn-secondary" onClick={() => navigate('/dashboard')}>Skip for Now</button>
-                <button type="submit" className="uf-btn-primary">
-                  <i className="fas fa-save" /> Save Information
+                <button type="submit" className="uf-btn-primary" disabled={saving}>
+                  {saving ? '⏳ Saving...' : <><i className="fas fa-save" /> Save Information</>}
                 </button>
               </div>
             </form>
@@ -189,3 +199,4 @@ export default function UserFormPage() {
     </div>
   );
 }
+
