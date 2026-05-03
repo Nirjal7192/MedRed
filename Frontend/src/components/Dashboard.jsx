@@ -1,32 +1,70 @@
-import { useState } from "react";  
+import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import DnaStrip from "../components/DnaStrip";
 import { AlarmClockCheck, CircleUser, MapPinHouse, Hospital, PhoneCall } from "lucide-react";
 import { Link } from "react-router-dom";
-
-const MOCK_USER = {
-  fname: 'John', lname: 'Doe', email: 'john.doe@example.com',
-  mobile: '+91 9876543210', gender: 'Male', birthDate: '1990-05-15',
-  bloodGroup: 'O+', street: '123 Main Street', city: 'Mumbai',
-  state: 'Maharashtra', pincode: '400001', country: 'India',
-  emergencyContact: 'Jane Doe', emergencyPhone: '+91 9876543211',
-  allergies: 'None', conditions: 'Hypertension, Type 2 Diabetes',
-  primaryDoctor: 'Dr. Sharma', hospital: 'City Hospital',
-};
-
-const MOCK_REMINDERS = [
-  { id: 1, medicineName: 'Metformin', dosage: '500mg', time: '08:00' },
-  { id: 2, medicineName: 'Lisinopril', dosage: '10mg',  time: '13:00' },
-  { id: 3, medicineName: 'Atorvastatin', dosage: '20mg', time: '22:00' },
-];
+import { useAuth } from "../context/AuthContext";
 
 export default function DashboardPage() {
+  const { user: authUser, setUser } = useAuth();
+
+  const [userData, setUserData] = useState(null);
+  const [editData, setEditData] = useState(null);
+  const [reminders, setReminders] = useState([]);
   const [editing, setEditing] = useState(false);
-  const [userData, setUserData] = useState(MOCK_USER);
-  const [editData, setEditData] = useState(MOCK_USER);
-  const [reminders, setReminders] = useState(MOCK_REMINDERS);
   const [doneChips, setDoneChips] = useState({});
   const [toasts, setToasts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // ── Load user + reminders from API on mount ──
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [userRes, remRes] = await Promise.all([
+          fetch('/api/auth/me', { credentials: 'include' }),
+          fetch('/api/reminders/user', { credentials: 'include' }),
+        ]);
+
+        if (userRes.ok) {
+          const { user } = await userRes.json();
+          // Flatten nested address for easier field mapping
+          const flat = {
+            fname: user.fname || '',
+            lname: user.lname || '',
+            email: user.email || '',
+            mobile: user.mobileNumber || '',
+            gender: user.gender || '',
+            birthDate: user.birthDate || '',
+            bloodGroup: user.bloodGroup || '',
+            street: user.address?.streetAddress || '',
+            city: user.address?.city || '',
+            state: user.address?.state || '',
+            pincode: user.address?.pinCode || '',
+            country: user.address?.country || '',
+            emergencyContact: user.emergencyContactNumber || '',
+            emergencyPhone: '',
+            allergies: user.allergies || '',
+            conditions: user.medicalConditions || '',
+            primaryDoctor: '',
+            hospital: '',
+          };
+          setUserData(flat);
+          setEditData(flat);
+        }
+
+        if (remRes.ok) {
+          const { reminders } = await remRes.json();
+          setReminders(reminders || []);
+        }
+      } catch (err) {
+        console.error('Dashboard load error:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
 
   function showToast(msg) {
     const id = Date.now();
@@ -36,14 +74,39 @@ export default function DashboardPage() {
 
   function startEdit() { setEditData(userData); setEditing(true); }
   function cancelEdit() { setEditing(false); }
-  function saveEdit() {
-    setUserData(editData); setEditing(false);
-    fetch('/api/update_profile', {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editData),
-    }).catch(() => {});
-    showToast('✓ Profile updated successfully');
+
+  async function saveEdit() {
+    try {
+      const payload = {
+        mobileNumber: editData.mobile,
+        birthDate: editData.birthDate,
+        gender: editData.gender,
+        bloodGroup: editData.bloodGroup,
+        allergies: editData.allergies,
+        medicalConditions: editData.conditions,
+        streetAddress: editData.street,
+        city: editData.city,
+        state: editData.state,
+        pinCode: editData.pincode,
+        country: editData.country,
+      };
+      const r = await fetch('/api/auth/updateUser', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (r.ok) {
+        setUserData(editData);
+        setEditing(false);
+        showToast('✓ Profile updated successfully');
+      } else {
+        const d = await r.json();
+        showToast(`❌ ${d.detail || 'Update failed'}`);
+      }
+    } catch {
+      showToast('❌ Network error');
+    }
   }
 
   function toggleChip(remId, label) {
@@ -64,15 +127,23 @@ export default function DashboardPage() {
         <div className="row-lbl">{label}</div>
         <div className="row-val">
           {editing
-            ? <input type={type} className="row-input" value={editData[field] || ''}
+            ? <input type={type} className="row-input" value={editData?.[field] || ''}
                 onChange={e => setEditData(d => ({ ...d, [field]: e.target.value }))} />
-            : <div className="row-display">{userData[field] || '—'}</div>}
+            : <div className="row-display">{userData?.[field] || '—'}</div>}
         </div>
       </div>
     );
   }
 
-  const initials = ((userData.fname?.[0] || '') + (userData.lname?.[0] || '')).toUpperCase();
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: 'var(--primary)', fontSize: '1.2rem' }}>Loading your dashboard...</div>
+      </div>
+    );
+  }
+
+  const initials = ((userData?.fname?.[0] || '') + (userData?.lname?.[0] || '')).toUpperCase() || '?';
 
   return (
     <div style={{ minHeight: '100vh' }}>
@@ -85,7 +156,7 @@ export default function DashboardPage() {
           <div className="dash-top">
             <div>
               <div className="dash-title">
-                Welcome back, <span style={{ color: 'var(--primary)' }}>{userData.fname}</span>
+                Welcome back, <span style={{ color: 'var(--primary)' }}>{userData?.fname || authUser?.fname}</span>
               </div>
               <div className="dash-subtitle">Your personalized health overview</div>
             </div>
@@ -113,7 +184,7 @@ export default function DashboardPage() {
                 <div className="card-ttl">Personal Information</div>
               </div>
               <div className="info-rows">
-                <InfoRow label="Full Name"   field="fname" />
+                <InfoRow label="First Name"  field="fname" />
                 <InfoRow label="Mobile"      field="mobile" type="tel" />
                 <InfoRow label="Gender"      field="gender" />
                 <InfoRow label="Birth Date"  field="birthDate" type="date" />
@@ -143,10 +214,9 @@ export default function DashboardPage() {
                 <div className="card-ttl">Emergency Contact</div>
               </div>
               <div className="info-rows">
-                <InfoRow label="Name"    field="emergencyContact" />
-                <InfoRow label="Phone"   field="emergencyPhone" type="tel" />
-                <InfoRow label="Allergies"  field="allergies" />
-                <InfoRow label="Conditions" field="conditions" />
+                <InfoRow label="Emergency #"   field="emergencyContact" />
+                <InfoRow label="Allergies"     field="allergies" />
+                <InfoRow label="Conditions"    field="conditions" />
               </div>
             </div>
 
@@ -174,7 +244,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="rem-list-dash">
                   {reminders.map(r => (
-                    <div className="rem-row" key={r.id}>
+                    <div className="rem-row" key={r._id}>
                       <div className="rem-time-center">
                         <div className="rem-big">{formatTime(r.time)}</div>
                         <div className="rem-small">Time</div>
@@ -187,8 +257,8 @@ export default function DashboardPage() {
                         {['Taken', 'Skipped', 'Snoozed'].map(lbl => (
                           <button
                             key={lbl}
-                            className={`rem-chip ${doneChips[`${r.id}-${lbl}`] ? 'done' : ''}`}
-                            onClick={() => toggleChip(r.id, lbl)}
+                            className={`rem-chip ${doneChips[`${r._id}-${lbl}`] ? 'done' : ''}`}
+                            onClick={() => toggleChip(r._id, lbl)}
                           >{lbl}</button>
                         ))}
                       </div>

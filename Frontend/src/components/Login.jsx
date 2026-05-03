@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import useCanvasAnimation from "../hooks/useCanvasAnimation";
+import { useAuth } from "../context/AuthContext";
 import { Pill } from "lucide-react";
 
 export default function LoginPage() {
@@ -8,6 +9,7 @@ export default function LoginPage() {
   useCanvasAnimation(canvasRef);
   const [tab, setTab] = useState('signin');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   /* ── SIGN IN state ── */
   const [loginData, setLoginData] = useState({ email: '', password: '' });
@@ -36,7 +38,7 @@ export default function LoginPage() {
     return s <= 2 ? 'weak' : s <= 4 ? 'medium' : 'strong';
   }
 
-  function handleLogin(e) {
+  async function handleLogin(e) {
     e.preventDefault();
     const errs = {};
     if (!validateEmail(loginData.email)) errs.email = 'Please enter a valid email address';
@@ -45,18 +47,28 @@ export default function LoginPage() {
     if (Object.keys(errs).length) return;
 
     setLoginLoading(true);
-    // API call would go here; for demo we navigate after a short delay
-    fetch("http://localhost:8000/api/auth/login", {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ email: loginData.email, password: loginData.password }).toString(),
-    })
-      .then(r => { if (r.redirected || r.ok) navigate('/dashboard'); else return r.json().then(d => setLoginErrors({ password: d.detail || 'Login failed' })); })
-      .catch(() => setLoginErrors({ password: 'Network error. Please try again.' }))
-      .finally(() => setLoginLoading(false));
+    try {
+      const r = await fetch('/api/auth/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginData.email, password: loginData.password }),
+      });
+      const data = await r.json();
+      if (r.ok && data.success) {
+        login(data.user);
+        navigate('/dashboard');
+      } else {
+        setLoginErrors({ password: data.detail || data.error || 'Login failed' });
+      }
+    } catch {
+      setLoginErrors({ password: 'Network error. Please try again.' });
+    } finally {
+      setLoginLoading(false);
+    }
   }
 
-  function handleSignup(e) {
+  async function handleSignup(e) {
     e.preventDefault();
     const errs = {};
     if (!validateName(signupData.firstName))    errs.firstName = 'First name must be at least 2 characters';
@@ -68,17 +80,29 @@ export default function LoginPage() {
     if (Object.keys(errs).length) return;
 
     setSignupLoading(true);
-    const body = new URLSearchParams({
-      username: `${signupData.firstName} ${signupData.lastName}`,
-      email: signupData.email, password: signupData.password,
-    }).toString();
-    fetch('http://localhost:8000/api/auth/register', {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body,
-    })
-      .then(r => { if (r.redirected || r.ok) navigate('/info'); else return r.json().then(d => setSignupErrors({ email: d.detail || 'Registration failed' })); })
-      .catch(() => setSignupErrors({ email: 'Network error. Please try again.' }))
-      .finally(() => setSignupLoading(false));
+    try {
+      const r = await fetch('/api/auth/register', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: `${signupData.firstName} ${signupData.lastName}`,
+          email: signupData.email,
+          password: signupData.password,
+        }),
+      });
+      const data = await r.json();
+      if (r.ok && data.success) {
+        login(data.user);
+        navigate('/info');
+      } else {
+        setSignupErrors({ email: data.detail || data.error || 'Registration failed' });
+      }
+    } catch {
+      setSignupErrors({ email: 'Network error. Please try again.' });
+    } finally {
+      setSignupLoading(false);
+    }
   }
 
   return (

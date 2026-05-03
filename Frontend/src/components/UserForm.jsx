@@ -2,12 +2,16 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import useCanvasAnimation from "../hooks/useCanvasAnimation";
 import Navbar from "../components/Navbar";
+import { useAuth } from "../context/AuthContext";
 
 export default function UserFormPage() {
   const canvasRef = useRef(null);
   useCanvasAnimation(canvasRef);
   const navigate = useNavigate();
+  const { setUser } = useAuth();
   const [showSuccess, setShowSuccess] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phone: '', gender: 'male',
@@ -22,16 +26,51 @@ export default function UserFormPage() {
     return e => setForm(d => ({ ...d, [field]: e.target.value }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    fetch('/api/user_info', {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    }).then(() => {}).catch(() => {});
+    setError('');
+    setSaving(true);
 
-    setShowSuccess(true);
-    setTimeout(() => { setShowSuccess(false); navigate('/dashboard'); }, 2000);
+    try {
+      // Map local form fields → backend schema
+      const payload = {
+        mobileNumber: form.phone,
+        birthDate: form.dob,
+        gender: form.gender,
+        bloodGroup: form.bloodGroup,
+        allergies: form.allergies,
+        medicalConditions: form.conditions,
+        emergencyContactNumber: form.emergencyPhone,
+        streetAddress: form.street,
+        city: form.city,
+        state: form.state,
+        pinCode: form.pincode,
+        country: form.country,
+      };
+
+      const r = await fetch('/api/auth/updateUser', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await r.json();
+
+      if (r.ok && data.success) {
+        setShowSuccess(true);
+        setTimeout(() => {
+          setShowSuccess(false);
+          navigate('/dashboard');
+        }, 2000);
+      } else {
+        setError(data.detail || 'Failed to save profile. Please try again.');
+      }
+    } catch {
+      setError('Network error. Please check your connection.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -45,6 +84,16 @@ export default function UserFormPage() {
           <div className="uf-card">
             <div className="uf-title">Complete Your Profile</div>
             <div className="uf-subtitle">Help us personalize your MedRed experience by filling in your health information.</div>
+
+            {error && (
+              <div style={{
+                background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.4)',
+                color: '#f87171', borderRadius: '8px', padding: '10px 14px',
+                marginBottom: '1rem', fontSize: '0.9rem'
+              }}>
+                ⚠️ {error}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} noValidate>
               {/* Personal */}
@@ -143,8 +192,8 @@ export default function UserFormPage() {
 
               <div className="uf-btn-group">
                 <button type="button" className="uf-btn-secondary" onClick={() => navigate('/dashboard')}>Skip for Now</button>
-                <button type="submit" className="uf-btn-primary">
-                  <i className="fas fa-save" /> Save Information
+                <button type="submit" className="uf-btn-primary" disabled={saving}>
+                  {saving ? '⏳ Saving...' : <><i className="fas fa-save" /> Save Information</>}
                 </button>
               </div>
             </form>
