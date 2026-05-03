@@ -1525,19 +1525,8 @@ textarea {
 /* ── REMINDERS PAGE ── */
 .rem-page {
   min-height: 100vh;
-  background:
-    radial-gradient(
-      900px 600px at -10% -10%,
-      rgba(220, 38, 38, 0.12),
-      transparent 40%
-    ),
-    radial-gradient(
-      700px 500px at 110% 0%,
-      rgba(255, 255, 255, 0.04),
-      transparent 35%
-    ),
-    linear-gradient(180deg, #0d1016, #0b0d13);
-  color: #f3f5f7;
+  background: var(--bg);
+  color: var(--fg);
 }
 .rp-nav {
   position: sticky;
@@ -1588,7 +1577,7 @@ textarea {
 .rp-container {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 24px 20px;
+  padding: 100px 20px 40px;
 }
 .rp-header {
   display: flex;
@@ -1705,9 +1694,9 @@ textarea {
 .rp-search {
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: #0f1320;
-  color: #f3f5f7;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--fg);
   font-weight: 700;
   outline: none;
 }
@@ -1722,8 +1711,9 @@ textarea {
   gap: 12px;
 }
 .rp-card {
-  background: rgba(21, 25, 36, 0.86);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--card-bg);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px;
   display: grid;
@@ -1732,7 +1722,7 @@ textarea {
   align-items: center;
   transition: all 0.25s;
   animation: fadeUp 0.25s ease both;
-  color: #f3f5f7;
+  color: var(--fg);
 }
 .rp-card:hover {
   transform: translateY(-2px);

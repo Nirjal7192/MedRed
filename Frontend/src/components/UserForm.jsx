@@ -1,13 +1,14 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import useCanvasAnimation from "../hooks/useCanvasAnimation";
 import Navbar from "../components/Navbar";
+import { authApi } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function UserFormPage() {
-  const canvasRef = useRef(null);
-  useCanvasAnimation(canvasRef);
   const navigate = useNavigate();
+  const { user, updateUser } = useAuth();
   const [showSuccess, setShowSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phone: '', gender: 'male',
@@ -22,23 +23,48 @@ export default function UserFormPage() {
     return e => setForm(d => ({ ...d, [field]: e.target.value }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    fetch('/api/user_info', {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    }).then(() => {}).catch(() => {});
-
-    setShowSuccess(true);
-    setTimeout(() => { setShowSuccess(false); navigate('/dashboard'); }, 2000);
+    setSubmitError('');
+    try {
+      await authApi.updateUser({
+        mobileNumber:   form.phone,
+        pinCode:        form.pincode,
+        streetAddress:  form.street,
+        city:           form.city,
+        state:          form.state,
+        country:        form.country,
+        gender:         form.gender,
+        birthDate:      form.dob,
+        bloodGroup:     form.bloodGroup,
+        medicalConditions: form.conditions,
+        allergies:      form.allergies,
+      });
+      // Update auth context with form data so Dashboard shows it
+      updateUser({
+        mobileNumber:     form.phone,
+        pinCode:          form.pincode,
+        streetAddress:    form.street,
+        city:             form.city,
+        state:            form.state,
+        country:          form.country,
+        gender:           form.gender,
+        birthDate:        form.dob,
+        bloodGroup:       form.bloodGroup,
+        medicalConditions: form.conditions,
+        allergies:        form.allergies,
+      });
+      setShowSuccess(true);
+      setTimeout(() => { setShowSuccess(false); navigate('/dashboard'); }, 2000);
+    } catch (err) {
+      setSubmitError(err.message || 'Failed to save profile. Please try again.');
+    }
   }
 
   return (
     <div className="uf-page" style={{ position: 'relative' }}>
-      <canvas ref={canvasRef} className="canvas-bg" />
       <div className="blob blob-1" /><div className="blob blob-2" />
-      <Navbar user={null} />
+      <Navbar user={user} />
 
       <main className="uf-main" style={{ position: 'relative', zIndex: 1 }}>
         <div className="uf-container">
@@ -141,6 +167,11 @@ export default function UserFormPage() {
                 </div>
               </div>
 
+              {submitError && (
+                <div style={{ color: '#ff6b6b', background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.3)', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 14 }}>
+                  ✗ {submitError}
+                </div>
+              )}
               <div className="uf-btn-group">
                 <button type="button" className="uf-btn-secondary" onClick={() => navigate('/dashboard')}>Skip for Now</button>
                 <button type="submit" className="uf-btn-primary">

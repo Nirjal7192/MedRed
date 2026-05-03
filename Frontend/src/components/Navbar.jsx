@@ -1,12 +1,21 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Bell, Pill, Menu, X } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { authApi } from "../services/api";
 
 export default function Navbar({ user }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const avatarRef = useRef(null);
+
+  async function handleLogout() {
+    try { await authApi.logout(); } catch {}
+    logout();
+    navigate('/login');
+  }
 
   useEffect(() => {
     function handleClick(e) {
@@ -52,7 +61,7 @@ export default function Navbar({ user }) {
                 <Bell size={16} style={{ width: 16 }} /> Reminders
               </div>
               <div className="menu-divider" />
-              <button className="menu-item danger" onClick={() => { navigate('/login'); setAvatarOpen(false); }}>
+              <button className="menu-item danger" onClick={() => { handleLogout(); setAvatarOpen(false); }}>
                 <i className="fas fa-sign-out-alt" style={{ width: 16 }} /> Logout
               </button>
             </div>
@@ -72,7 +81,7 @@ export default function Navbar({ user }) {
         <button
           className="btn btn-primary"
           style={{ marginTop: '0.5rem' }}
-          onClick={() => { navigate('/login'); setMenuOpen(false); }}
+          onClick={() => { handleLogout(); setMenuOpen(false); }}
         >
           Logout
         </button>

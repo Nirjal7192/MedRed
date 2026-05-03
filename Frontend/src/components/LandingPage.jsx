@@ -1,50 +1,18 @@
-import { useRef, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import useCanvasAnimation from "../hooks/useCanvasAnimation";
-import { Bell, AlarmClockCheck, Heart, Pill, Calendar, Shield, Menu, X, Zap, BarChart3, RefreshCw } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Bell, AlarmClockCheck, Heart, Pill, Calendar, Shield, Zap, BarChart3, RefreshCw } from "lucide-react";
+import Navbar from "./Navbar";
+import { useAuth } from "../context/AuthContext";
 
 export default function LandingPage() {
-  const canvasRef = useRef(null);
-  useCanvasAnimation(canvasRef);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <div style={{ position: 'relative' }}>
-      <canvas ref={canvasRef} className="canvas-bg" />
       <div className="blob blob-1" />
       <div className="blob blob-2" />
 
-      {/* Landing Navbar */}
-      <nav className="navbar">
-        <div className="nav-inner">
-          <Link to="/" className="logo">
-            <div className="logo-icon">
-              <Pill size={20} color="#ef4444" />
-            </div>
-            <span className="gradient-text">MedRed</span>
-          </Link>
-          <div className="nav-links">
-            <a href="#features">Features</a>
-            <a href="#how-it-works">How It Works</a>
-            <Link to="/dashboard">Dashboard</Link>
-            <Link to="/reminders">Reminders</Link>
-          </div>
-          <div className="nav-buttons">
-            <Link to="/login" className="btn btn-ghost">Sign In</Link>
-            <Link to="/login" className="btn btn-primary">Get Started</Link>
-          </div>
-          <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-        </div>
-        <div className={`mobile-menu ${menuOpen ? 'open' : ''}`}>
-          <a href="#features" onClick={() => setMenuOpen(false)}><i className="fas fa-star" /> Features</a>
-          <a href="#how-it-works" onClick={() => setMenuOpen(false)}><i className="fas fa-info-circle" /> How It Works</a>
-          <Link to="/login" onClick={() => setMenuOpen(false)}><i className="fas fa-sign-in-alt" /> Sign In / Sign Up</Link>
-        </div>
-      </nav>
-
+      {/* Navbar */}
+      <Navbar user={user} />
       {/* Hero */}
       <section className="hero" id="home">
         <div className="hero-bg">

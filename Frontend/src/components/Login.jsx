@@ -1,13 +1,13 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import useCanvasAnimation from "../hooks/useCanvasAnimation";
-import { Pill } from "lucide-react";
+import { authApi } from "../services/api";
+import { useAuth } from "../context/AuthContext";
+import Navbar from "./Navbar";
 
 export default function LoginPage() {
-  const canvasRef = useRef(null);
-  useCanvasAnimation(canvasRef);
   const [tab, setTab] = useState('signin');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   /* ── SIGN IN state ── */
   const [loginData, setLoginData] = useState({ email: '', password: '' });
@@ -36,7 +36,7 @@ export default function LoginPage() {
     return s <= 2 ? 'weak' : s <= 4 ? 'medium' : 'strong';
   }
 
-  function handleLogin(e) {
+  async function handleLogin(e) {
     e.preventDefault();
     const errs = {};
     if (!validateEmail(loginData.email)) errs.email = 'Please enter a valid email address';
@@ -45,18 +45,18 @@ export default function LoginPage() {
     if (Object.keys(errs).length) return;
 
     setLoginLoading(true);
-    // API call would go here; for demo we navigate after a short delay
-    fetch("http://localhost:8000/api/auth/login", {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ email: loginData.email, password: loginData.password }).toString(),
-    })
-      .then(r => { if (r.redirected || r.ok) navigate('/dashboard'); else return r.json().then(d => setLoginErrors({ password: d.detail || 'Login failed' })); })
-      .catch(() => setLoginErrors({ password: 'Network error. Please try again.' }))
-      .finally(() => setLoginLoading(false));
+    try {
+      const data = await authApi.login(loginData.email, loginData.password);
+      login(data.user); // store in AuthContext
+      navigate('/dashboard');
+    } catch (err) {
+      setLoginErrors({ password: err.message || 'Login failed. Please try again.' });
+    } finally {
+      setLoginLoading(false);
+    }
   }
 
-  function handleSignup(e) {
+  async function handleSignup(e) {
     e.preventDefault();
     const errs = {};
     if (!validateName(signupData.firstName))    errs.firstName = 'First name must be at least 2 characters';
@@ -68,40 +68,24 @@ export default function LoginPage() {
     if (Object.keys(errs).length) return;
 
     setSignupLoading(true);
-    const body = new URLSearchParams({
-      username: `${signupData.firstName} ${signupData.lastName}`,
-      email: signupData.email, password: signupData.password,
-    }).toString();
-    fetch('http://localhost:8000/api/auth/register', {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body,
-    })
-      .then(r => { if (r.redirected || r.ok) navigate('/info'); else return r.json().then(d => setSignupErrors({ email: d.detail || 'Registration failed' })); })
-      .catch(() => setSignupErrors({ email: 'Network error. Please try again.' }))
-      .finally(() => setSignupLoading(false));
+    try {
+      await authApi.register(
+        signupData.firstName, signupData.lastName, signupData.email, signupData.password
+      );
+      // Store basic user info in AuthContext; full profile filled in UserForm
+      login({ email: signupData.email, fname: signupData.firstName, lname: signupData.lastName });
+      navigate('/info');
+    } catch (err) {
+      setSignupErrors({ email: err.message || 'Registration failed. Please try again.' });
+    } finally {
+      setSignupLoading(false);
+    }
   }
 
   return (
     <div className="login-page">
-      <canvas ref={canvasRef} className="canvas-bg" />
+      <Navbar user={null} />
       <div className="blob blob-1" /><div className="blob blob-2" />
-
-      {/* Minimal navbar */}
-      <nav className="navbar">
-        <div className="nav-inner">
-          <Link to="/" className="logo">
-            <div className="logo-icon">
-              <Pill color="#4CAF50" />
-            </div>
-            <span className="gradient-text">MedRed</span>
-          </Link>
-          <div className="nav-links">
-            <Link to="/">Home</Link>
-            <Link to="/dashboard">Dashboard</Link>
-          </div>
-        </div>
-      </nav>
-
       <div className="login-content">
         <div className="auth-wrap">
           <div className="auth-card">

@@ -27,7 +27,7 @@ const verifyToken = (token) => {
  */
 const protect = (req, res, next) => {
     // Requires cookie-parser middleware in index.js
-    const accessToken = req.cookies.access_token; 
+    const accessToken = req.cookies.token; 
 
     if (!accessToken) {
         return res.status(401).json({ error: "Not authenticated - No token provided" });  

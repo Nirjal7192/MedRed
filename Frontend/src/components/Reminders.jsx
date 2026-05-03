@@ -1,22 +1,32 @@
 import Navbar from "../components/Navbar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Bell, User, Pill } from "lucide-react";
-const MOCK_REMINDERS = []
+import { remindersApi } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function Reminders() {
-  const [reminders, setReminders] = useState(MOCK_REMINDERS.map(r => ({ ...r, active: true })));
+  const { user } = useAuth();
+  const [reminders, setReminders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [panelOpen, setPanelOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
 
   // New reminder form state
   const [newRem, setNewRem] = useState({ medicineName: '', dosage: '', time: '', notes: '' });
   const [activeDays, setActiveDays] = useState([]);
 
   const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  const DAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  // Fetch reminders on mount
+  useEffect(() => {
+    remindersApi.getAll()
+      .then(data => setReminders((data.reminders || []).map(r => ({ ...r, active: true }))))
+      .catch(() => setReminders([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   function showToast(msg) {
     const id = Date.now();
@@ -39,32 +49,50 @@ export default function Reminders() {
     return '🌙 Night';
   }
 
-  function addReminder(e) {
+  async function addReminder(e) {
     e.preventDefault();
-    if (!newRem.medicineName || !newRem.dosage || !newRem.time) return alert('Please fill all required fields');
-    const entry = { ...newRem, id: Date.now(), active: true };
-    setReminders(r => [...r, entry]);
-    setNewRem({ medicineName: '', dosage: '', time: '', notes: '' });
-    setActiveDays([]);
-    setPanelOpen(false);
-    showToast('✓ Reminder added successfully!');
+    if (!newRem.medicineName || !newRem.dosage || !newRem.time) {
+      return alert('Please fill all required fields');
+    }
 
-    fetch('/api/reminders/add', {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(entry),
-    }).catch(() => {});
+    setSubmitting(true);
+    try {
+      const data = await remindersApi.add(newRem.medicineName, newRem.dosage, newRem.time);
+      // Optimistically add to list with server-generated _id
+      const entry = {
+        _id: data.reminder_id,
+        medicineName: newRem.medicineName,
+        dosage: newRem.dosage,
+        time: newRem.time,
+        notes: newRem.notes,
+        active: true,
+      };
+      setReminders(r => [...r, entry]);
+      setNewRem({ medicineName: '', dosage: '', time: '', notes: '' });
+      setActiveDays([]);
+      setPanelOpen(false);
+      showToast('✓ Reminder added successfully!');
+      if (data.sms_scheduled) showToast('📱 SMS reminder scheduled!');
+    } catch (err) {
+      showToast(`✗ ${err.message}`);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  function deleteReminder(id) {
+  async function deleteReminder(id) {
     if (!window.confirm('Delete this reminder?')) return;
-    setReminders(r => r.filter(x => x.id !== id));
-    showToast('✓ Reminder deleted');
-    fetch(`/api/reminders/delete/${id}`, { method: 'DELETE', credentials: 'include' }).catch(() => {});
+    try {
+      await remindersApi.delete(id);
+      setReminders(r => r.filter(x => (x._id || x.id) !== id));
+      showToast('✓ Reminder deleted');
+    } catch (err) {
+      showToast(`✗ ${err.message}`);
+    }
   }
 
   function toggleActive(id) {
-    setReminders(r => r.map(x => x.id === id ? { ...x, active: !x.active } : x));
+    setReminders(r => r.map(x => (x._id || x.id) === id ? { ...x, active: !x.active } : x));
   }
 
   const filtered = reminders.filter(r => {
@@ -73,26 +101,15 @@ export default function Reminders() {
     if (!matchSearch) return false;
     if (filter === 'active') return r.active;
     if (filter === 'paused') return !r.active;
-    if (filter === 'today') return true;
     return true;
   });
 
-  const initials = 'JD';
+  const initials = ((user?.fname?.[0] || '') + (user?.lname?.[0] || '')).toUpperCase() || 'U';
 
   return (
     <div className="rem-page">
       {/* Navbar */}
-      <header className="rp-nav">
-        <div className="rp-nav-inner">
-          <Link to="/dashboard" className="rp-brand">
-            <div className="rp-logo">
-              <Pill size={20} color="#f1e6e6" />
-            </div>
-            <span className="rp-brand-name">MedRed</span>
-          </Link>
-          <div className="rp-avatar">{initials}</div>
-        </div>
-      </header>
+      <Navbar user={user} />
 
       <main className="rp-container">
         {/* Header */}
@@ -133,37 +150,45 @@ export default function Reminders() {
 
         {/* Reminder List */}
         <div className="rp-list">
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="rp-empty">
+              <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
+              <div style={{ fontWeight: 700 }}>Loading reminders...</div>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="rp-empty">
               <div style={{ fontSize: 40, marginBottom: 12 }}>💊</div>
               <div style={{ fontWeight: 700, marginBottom: 6 }}>No reminders found</div>
               <div>Click "Add Reminder" to create your first medicine reminder</div>
             </div>
-          ) : filtered.map((r, idx) => (
-            <div className="rp-card" key={r.id} style={{ animationDelay: `${idx * 0.05}s` }}>
-              <div className="rp-card-left">
-                <div className="title-row">
-                  <div className="rp-pill">💊</div>
-                  <div>
-                    <div className="rp-med-name">{r.medicineName}</div>
-                    <div className="rp-dose">{r.dosage}</div>
+          ) : filtered.map((r, idx) => {
+            const id = r._id || r.id;
+            return (
+              <div className="rp-card" key={id} style={{ animationDelay: `${idx * 0.05}s` }}>
+                <div className="rp-card-left">
+                  <div className="title-row">
+                    <div className="rp-pill">💊</div>
+                    <div>
+                      <div className="rp-med-name">{r.medicineName}</div>
+                      <div className="rp-dose">{r.dosage}</div>
+                    </div>
+                  </div>
+                  <div className="rp-meta">
+                    <span>{formatTime(r.time)}</span>
+                    <div className="rp-dot" />
+                    <span>{getTimeLabel(r.time)}</span>
+                    {r.notes && <><div className="rp-dot" /><span>{r.notes}</span></>}
                   </div>
                 </div>
-                <div className="rp-meta">
-                  <span>{formatTime(r.time)}</span>
-                  <div className="rp-dot" />
-                  <span>{getTimeLabel(r.time)}</span>
-                  {r.notes && <><div className="rp-dot" /><span>{r.notes}</span></>}
+                <div className="rp-actions">
+                  <button className="rp-chip" onClick={() => deleteReminder(id)}>🗑️ Delete</button>
+                  <div className={`rp-switch ${r.active ? 'on' : ''}`} onClick={() => toggleActive(id)}>
+                    <div className="rp-knob" />
+                  </div>
                 </div>
               </div>
-              <div className="rp-actions">
-                <button className="rp-chip" onClick={() => deleteReminder(r.id)}>🗑️ Delete</button>
-                <div className={`rp-switch ${r.active ? 'on' : ''}`} onClick={() => toggleActive(r.id)}>
-                  <div className="rp-knob" />
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </main>
 
@@ -213,7 +238,9 @@ export default function Reminders() {
           </div>
           <div className="rp-panel-footer">
             <button type="button" className="rp-btn" onClick={() => setPanelOpen(false)}>Cancel</button>
-            <button type="submit" className="rp-btn rp-btn-primary">💾 Save Reminder</button>
+            <button type="submit" className="rp-btn rp-btn-primary" disabled={submitting}>
+              {submitting ? '⏳ Saving...' : '💾 Save Reminder'}
+            </button>
           </div>
         </form>
       </div>
