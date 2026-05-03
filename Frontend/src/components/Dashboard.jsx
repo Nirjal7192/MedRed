@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useState, useEffect } from "react";
+// import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import DnaStrip from "../components/DnaStrip";
 import { AlarmClockCheck, CircleUser, MapPinHouse, Hospital, PhoneCall } from "lucide-react";
