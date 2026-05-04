@@ -38,13 +38,14 @@ router.post('/login', async (req, res) => {
         const isMatch = await verifyPassword(password, user.password);   
         if (!isMatch) return res.status(401).json({ detail: "incorrect password" });   
 
-        const token = createAccessToken({ sub: user._id, user: { email: user.email, fname: user.fname, lname: user.lname } });   
+        const token = createAccessToken({ sub: user._id, user: { email: user.email, fname: user.fname, lname: user.lname } });
 
         res.cookie('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'Strict' : 'Lax'
-        });   
+            sameSite: 'Lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000  // 7 days in ms
+        });
 
         res.json({ success: true, message: "Login successful", user: { email: user.email, fname: user.fname, lname: user.lname } });   
     } catch (err) {
@@ -68,14 +69,15 @@ router.post('/register', async (req, res) => {
         const newUser = new User({ fname, lname, email, password: hashedPassword });
         const savedUser = await newUser.save();   
 
-        const token = createAccessToken({ sub: savedUser._id, user: { email, fname, lname } });   
-        
+        const token = createAccessToken({ sub: savedUser._id, user: { email, fname, lname } });
+
         res.cookie('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'Strict' : 'Lax'
-        });   
-        res.json({ success: true, message: "Registration successful" });   
+            sameSite: 'Lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000  // 7 days in ms
+        });
+        res.json({ success: true, message: "Registration successful" });
     } catch (err) {
         res.status(500).json({ error: err.message });   
     }

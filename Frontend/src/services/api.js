@@ -1,10 +1,15 @@
 /**
  * Centralized API service for MedRed
  * All requests use credentials: 'include' so the httpOnly JWT cookie is sent.
- * The Vite dev proxy forwards /api/* to http://localhost:8000
+ *
+ * In development: requests go to /api/* which Vite proxies to http://localhost:8000
+ *   → same-origin from the browser's perspective → httpOnly cookie works perfectly.
+ * In production: requests go directly to the deployed backend URL.
  */
 
-const BASE = 'https://medred-k41q.onrender.com/api';
+const BASE = import.meta.env.DEV
+  ? '/api'                                    // ← Vite proxy (localhost dev)
+  : 'https://medred-k41q.onrender.com/api';   // ← Production (Render)
 
 async function request(method, path, body) {
   const opts = {

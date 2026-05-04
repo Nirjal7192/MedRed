@@ -22,7 +22,7 @@ const verifyPassword = async (plainPassword, hashedPassword) => {
  * Create a JWT access token
  * Replaces: createAccessToken
  */
-const createAccessToken = (data, expiresDelta = '1h') => {
+const createAccessToken = (data, expiresDelta = '7d') => {
     // jwt.sign automatically handles the 'exp' claim using 'expiresIn'
     return jwt.sign(
         { sub: data.sub, user: data.user }, // Payload

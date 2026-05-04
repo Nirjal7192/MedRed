@@ -10,6 +10,9 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
         secure: false,
+        // Rewrite cookie domain so the browser accepts cookies
+        // set by localhost:8000 when requests come through localhost:5173
+        cookieDomainRewrite: 'localhost',
       }
     }
   }
