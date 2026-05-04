@@ -28,7 +28,8 @@ const allowedOrigins = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "https://medred.onrender.com",
-    "https://med-red.vercel.app"
+    "https://med-red.vercel.app",
+    "https://med-rbpc4tpdt-2fast4bugs.vercel.app/"
 ];
 
 app.use(cors({
