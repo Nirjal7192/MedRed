@@ -4,7 +4,7 @@
  * The Vite dev proxy forwards /api/* to http://localhost:8000
  */
 
-const BASE = 'https://medred.leapcell.app/api';
+const BASE = 'https://medred-k41q.onrender.com/api';
 
 async function request(method, path, body) {
   const opts = {
